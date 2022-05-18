@@ -2,10 +2,14 @@
 UI + Service logic
 """
 from copy import deepcopy
-import sqlite3
 
 from UI.mainwindow import Ui_MainWindow  # import generated ui to py
-from .questions import questions_and_variables
+from service.questions import questions_and_variables
+from DB.db import (
+    select_all,
+    create_and_insert,
+    delete_all
+)
 
 
 class Interface(Ui_MainWindow):
@@ -19,6 +23,7 @@ class Interface(Ui_MainWindow):
         self.e_1 = 0.2  # # threshold the diagnosis is answer
         self.answer = None  # receive answer on question from user
         self.questionTextLabel = ""
+        self
         self.pW_X = []
 
         # define Qt Signals Handler
@@ -34,6 +39,7 @@ class Interface(Ui_MainWindow):
         Start Loop of questions, main func
         :return:
         """
+        create_and_insert()
         # информативный симптом - тот, который присутсвует в большем кол-ве диагнозов
         while True or len() > 0:
             # show most informative question
@@ -72,6 +78,7 @@ class Interface(Ui_MainWindow):
                 self.end_loop()
                 break
 
+            delete_all()
             """if self.pW_X < self.e_0:
                 # j-й диагноз можно исключить из дальнейшего рассмотрения
                 pass
@@ -101,9 +108,6 @@ class Interface(Ui_MainWindow):
         # не забыть тут про условные вероятности вида p` = 1 - р
         self.answer = "no"
 
-    def pop_question(self):
-        pass
-
     def most_informative_question(self):
         """
         для каждого еще не заданного вопроса определяется
@@ -111,7 +115,12 @@ class Interface(Ui_MainWindow):
         максимальным значением считается самым информативным в текущем цикле
         :return:
         """
-        pass
+        res = select_all()
+        index = len() - count(None)
+        return index
+
+
+
 
     # ---------------- formulas
     def bayes_yes(self, pW, pX_W, pX_noW):
