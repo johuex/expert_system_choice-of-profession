@@ -135,11 +135,11 @@ class Interface(Ui_MainWindow):
         _df = deepcopy(self.df)
         _df = _df.drop(["profession", "Pa"], axis=1)
         for i in _df.index:
-            for j in range(1, _df[i:i+1].index, 2):
-                if _df[i][j] > _df[i][j-1]:
-                    self.df["label"] = 0
+            for j in range(1, len(_df[i:i+1].columns), 2):
+                if _df.iloc[i:i+1, j:j+1].values > _df.iloc[i:i+1, j-1:j].values:
+                    self.df["label"][i] = 1
                 else:
-                    self.df["label"] = 1
+                    self.df["label"][i] = 0
 
     def conditional_probabilities(self):
         # calculate theoretical max and min probabilities
@@ -183,13 +183,13 @@ class Interface(Ui_MainWindow):
         _df = get_simptom(self.df, index)
 
         for ind in _df.index:
-            pX_W = _df[ind][f"p{ind}(x/w)"]
-            pX_noW = _df[ind][f"p{ind}(x/now)"]
+            pX_W = _df[f"p{ind}(x/w)"][ind]
+            pX_noW = _df[f"p{ind}(x/now)"][ind]
             pW = self.pW[ind]
             if pX_W is not None and pX_noW is not None:
                 self.pW[ind] = pW * pX_W / (pW*pX_W + (1-pW)*pX_noW)
                 if self.pW[ind] < self.e_0:
-                    self.exclude_diagnosis()
+                    self.exclude_diagnosis(ind)
 
 
 
@@ -201,43 +201,47 @@ class Interface(Ui_MainWindow):
         _df = get_simptom(self.df, index)
 
         for ind in _df.index:
-            pX_W = _df[ind][f"p{ind}(x/w)"]
-            pX_noW = _df[ind][f"p{ind}(x/now)"]
+            pX_W = _df[f"p{ind}(x/w)"][ind]
+            pX_noW = _df[f"p{ind}(x/now)"][ind]
             pW = self.pW[ind]
             if pX_W is not None and pX_noW is not None:
                 self.pW[ind] = pW * (1 - pX_W) / (pW * (1 - pX_W) + (1 - pW) * (1 - pX_noW))
                 if self.pW[ind] < self.e_0:
-                    self.exclude_diagnosis()
+                    self.exclude_diagnosis(ind)
 
 
     def all_yes_answers_probability_true(self):
         _df = deepcopy(self.df)
-        _df = _df.drop(["profession", "Pa"], index=1)
-        _df = _df[[c for c in _df.columns if c.lower()[:7] != '(x/now)']]
+        _df = _df.drop(["profession", "Pa"], axis=1)
+        #_df = _df[[c for c in _df.columns if c.endswith("(x/w)")]]
         _df[(_df.label == 1)] -= 1
         _df[(_df.label == 1)] *= -1
+        _df = _df.drop(["label"], axis=1)
 
         for index in range(self.len_symptoms):
-            self.pW_X_P[index] = _df.iloc[index, 2:].prod()
+            self.pW_X_P[index] = _df.iloc[index:index+1, 2:].prod()
 
     def all_yes_answers_probability_false(self):
         _df = deepcopy(self.df)
         _df = _df.drop(["profession", "Pa"], axis=1)
-        _df = _df[[c for c in _df.columns if c.lower()[:5] != '(x/w)']]
+        _df = _df[[c for c in _df.columns if c.endswith("(x/now)")]]
         _df[(_df.label == 1)] -= 1
         _df[(_df.label == 1)] *= -1
+        _df = _df.drop(["label"], axis=1)
 
         for index in range(self.len_symptoms):
-            self.p_noW_X_P[index] = _df.iloc[index, 2:].prod()
+            self.p_noW_X_P[index] = _df.iloc[index:index+1, 2:].prod()
 
     def all_no_answers_probability_true(self):
         _df = deepcopy(self.df)
         _df = _df.drop(["profession", "Pa"], axis=1)
-        _df = _df[[c for c in _df.columns if c.lower()[:7] != '(x/now)']]
+        _df = _df[[c for c in _df.columns if c.endswith("(x/w)")]]
         _df[(_df.label == 1)] -= 1
         _df[(_df.label == 1)] *= -1
+        _df = _df.drop(["label"], axis=1)
         _df[:, :] -= 1
         _df[:, :] *= 1
+
 
         for index in range(self.len_symptoms):
             self.p_noW_X_P[index] = _df.iloc[index, 2:].prod()
@@ -245,9 +249,10 @@ class Interface(Ui_MainWindow):
     def all_no_answers_probability_false(self):
         _df = deepcopy(self.df)
         _df = _df.drop(["profession", "Pa"], axis=1)
-        _df = _df[[c for c in _df.columns if c.lower()[:7] != '(x/now)']]
+        _df = _df[[c for c in _df.columns if c.endswith("(x/now)")]]
         _df[(_df.label == 1)] -= 1
         _df[(_df.label == 1)] *= -1
+        _df = _df.drop(["label"], axis=1)
         _df[:, :] -= 1
         _df[:, :] *= 1
         for index in range(self.len_symptoms):

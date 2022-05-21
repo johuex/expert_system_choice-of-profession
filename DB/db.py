@@ -5,7 +5,7 @@ from pandas import DataFrame
 # yes, it's not true DB...
 
 def create_and_insert():
-    df = pd.read_csv('./DB/insert_value_to_table.csv', encoding="UTF-8")
+    df = pd.read_csv('./DB/insert_value_to_table.csv', sep=";")
     #df.columns = df.columns.str.strip()
     df = df.drop([10])
 
