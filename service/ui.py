@@ -4,7 +4,7 @@ UI + Service logic
 from copy import deepcopy
 
 import pandas as pd
-from PyQt6.QtCore import QThread
+from PyQt6.QtWidgets import QApplication
 
 from UI.mainwindow import Ui_MainWindow  # import generated ui to py
 from service.questions import questions_and_variables
@@ -20,15 +20,13 @@ class Interface(Ui_MainWindow):
         super().__init__()
         self.ui = Ui_MainWindow()
 
-        self.thread = QThread()
-
         # init variables
         self.questions_and_variables = deepcopy(questions_and_variables)
         self.e_0 = 0.01  # threshold rejection of the diagnosis
         self.e_1 = 0.2  # # threshold the diagnosis is answer
         self.len_symptoms = 0
         self.answer = None  # receive answer on question from user
-        self.questionTextLabel = ""
+        self.questionTextLabel.setText("")
         self.df = None
         self.pW = []  # актуальные вероятности диагнозов
         self.pW_X_P = None
@@ -43,10 +41,6 @@ class Interface(Ui_MainWindow):
         self.noPushButton.pressed.connect(self.answer_no_button)
         self.startpushButton.pressed.connect(self.start)
         # self.exitPushButton.pressed.connect(self.)
-
-        self.moveToThread(self.thread)
-        self.thread.start()
-
 
     def start(self):
         """
@@ -69,12 +63,12 @@ class Interface(Ui_MainWindow):
         while True or len(self.questions_and_variables) > 0:
             # show most informative question
             inf_quest = self.most_informative_question()
-            self.questionTextLabel = self.questions_and_variables[inf_quest]
-
+            self.questionTextLabel.setText(self.questions_and_variables[inf_quest])
             self.update()
+
             # wait answer from user
             while self.answer is None:
-                pass
+                QApplication.processEvents()
 
             # calculate pW by yes/no Bayes formula
             match self.answer:
@@ -86,6 +80,7 @@ class Interface(Ui_MainWindow):
 
             # exclude symptom after iteration
             self.df = delete_symptom(self.df, inf_quest)
+            self.questions_and_variables.pop(inf_quest)
             self.len_symptoms -= 1
 
             # calculate theoretical max and min probabilities
@@ -190,15 +185,13 @@ class Interface(Ui_MainWindow):
         _df = get_simptom(self.df, index)
 
         for ind in _df.index:
-            pX_W = _df[f"p{ind}(x/w)"][ind]
-            pX_noW = _df[f"p{ind}(x/now)"][ind]
+            pX_W = _df.iloc[ind, 0]
+            pX_noW = _df.iloc[ind, 1]
             pW = self.pW[ind]
             if pX_W is not None and pX_noW is not None:
                 self.pW[ind] = pW * pX_W / (pW*pX_W + (1-pW)*pX_noW)
                 if self.pW[ind] < self.e_0:
                     self.exclude_diagnosis(ind)
-
-
 
     def bayes_no(self, index):
         """
@@ -208,14 +201,13 @@ class Interface(Ui_MainWindow):
         _df = get_simptom(self.df, index)
 
         for ind in _df.index:
-            pX_W = _df[f"p{ind}(x/w)"][ind]
-            pX_noW = _df[f"p{ind}(x/now)"][ind]
+            pX_W = _df.iloc[ind, 0]
+            pX_noW = _df.iloc[ind, 1]
             pW = self.pW[ind]
             if pX_W is not None and pX_noW is not None:
                 self.pW[ind] = pW * (1 - pX_W) / (pW * (1 - pX_W) + (1 - pW) * (1 - pX_noW))
                 if self.pW[ind] < self.e_0:
                     self.exclude_diagnosis(ind)
-
 
     def all_yes_answers_probability_true(self):
         _df = deepcopy(self.df)
