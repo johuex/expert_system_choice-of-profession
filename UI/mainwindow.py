@@ -1,4 +1,4 @@
-# Form implementation generated from reading ui file '.\mainwindow.ui'
+# Form implementation generated from reading ui file './UI/mainwindow.ui'
 #
 # Created by: PyQt6 UI code generator 6.3.0
 #
@@ -84,6 +84,9 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.exitPushButton = QtWidgets.QPushButton(self.centralwidget)
         self.exitPushButton.setGeometry(QtCore.QRect(730, 650, 75, 23))
         self.exitPushButton.setObjectName("exitPushButton")
+        self.startpushButton = QtWidgets.QPushButton(self.centralwidget)
+        self.startpushButton.setGeometry(QtCore.QRect(10, 640, 141, 31))
+        self.startpushButton.setObjectName("startpushButton")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 826, 21))
@@ -109,3 +112,4 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.label_5.setText(_translate("MainWindow", "Исключенные диагнозы:"))
         self.label_6.setText(_translate("MainWindow", "Диагнозы и их вероятности: "))
         self.exitPushButton.setText(_translate("MainWindow", "Exit"))
+        self.startpushButton.setText(_translate("MainWindow", "Start"))
