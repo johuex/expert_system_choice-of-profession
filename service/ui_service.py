@@ -3,6 +3,9 @@ UI + Service logic
 """
 from copy import deepcopy
 
+import pandas as pd
+from PyQt6.QtCore import QThread
+
 from UI.mainwindow import Ui_MainWindow  # import generated ui to py
 from service.questions import questions_and_variables
 from DB.db import (
@@ -16,6 +19,8 @@ class Interface(Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.ui = Ui_MainWindow()
+
+        self.thread = QThread()
 
         # init variables
         self.questions_and_variables = deepcopy(questions_and_variables)
@@ -36,10 +41,12 @@ class Interface(Ui_MainWindow):
         # define Qt Signals Handler
         self.yesPushButton.pressed.connect(self.answer_yes_button)
         self.noPushButton.pressed.connect(self.answer_no_button)
+        self.startpushButton.pressed.connect(self.start)
         # self.exitPushButton.pressed.connect(self.)
 
-        # start loop of questions
-        self.start()
+        self.moveToThread(self.thread)
+        self.thread.start()
+
 
     def start(self):
         """
@@ -47,8 +54,8 @@ class Interface(Ui_MainWindow):
         :return:
         """
         self.df = create_and_insert()
-        self.len_symptoms = ((len(self.df.columns) - 2)//2) # TODO уменьшать
-        self.pW = [self.df[i:i+1]["Pa"] for i in self.df.index]
+        self.len_symptoms = ((len(self.df.columns) - 2)//2)
+        self.pW = self.df['Pa'].to_list()
         self.pW_X_P = [0] * self.len_symptoms
         self.p_noW_X_P = [0] * self.len_symptoms
         self.pW_noX_P = [0] * self.len_symptoms
@@ -64,6 +71,7 @@ class Interface(Ui_MainWindow):
             inf_quest = self.most_informative_question()
             self.questionTextLabel = self.questions_and_variables[inf_quest]
 
+            self.update()
             # wait answer from user
             while self.answer is None:
                 pass
@@ -122,10 +130,9 @@ class Interface(Ui_MainWindow):
         максимальным значением считается самым информативным в текущем цикле
         :return:
         """
-        res = deepcopy(self.df)
-        index = 0
-        for elem in res:
-            index = len(elem) - elem.count(None)
+        _df = deepcopy(self.df)
+        res =_df.isna().sum(axis=1).to_list()
+        index = res.index(min(res))
         return index
 
     def check_reverse_probability(self):
@@ -150,7 +157,7 @@ class Interface(Ui_MainWindow):
         self.max_theor_prob()
         self.min_theor_prob()
 
-        for i in range(self.len_symptoms):
+        for i in range(len(self.df)):
             if self.p_max_W[i] < self.pW[i]:
                 # j-й диагноз можно исключить из дальнейшего рассмотрения
                 self.exclude_diagnosis(i)
@@ -213,53 +220,61 @@ class Interface(Ui_MainWindow):
     def all_yes_answers_probability_true(self):
         _df = deepcopy(self.df)
         _df = _df.drop(["profession", "Pa"], axis=1)
-        #_df = _df[[c for c in _df.columns if c.endswith("(x/w)")]]
-        _df[(_df.label == 1)] -= 1
-        _df[(_df.label == 1)] *= -1
+        _df = _df[[c for c in _df.columns if (c.endswith("(x/w)") or c.endswith("label"))]]
+        cols = [c for c in _df.columns if c.endswith("(x/w)")]
+        _df.loc[_df.label == 1, cols] -= 1
+        _df.loc[_df.label == 1, cols] *= -1
         _df = _df.drop(["label"], axis=1)
 
-        for index in range(self.len_symptoms):
-            self.pW_X_P[index] = _df.iloc[index:index+1, 2:].prod()
+        self.pW_X_P = _df.prod(axis=1).values.tolist()
+        # for index in range(self.len_symptoms):
+        #     self.pW_X_P[index] = _df.iloc[index:index+1, 2:].prod()
 
     def all_yes_answers_probability_false(self):
         _df = deepcopy(self.df)
         _df = _df.drop(["profession", "Pa"], axis=1)
-        _df = _df[[c for c in _df.columns if c.endswith("(x/now)")]]
-        _df[(_df.label == 1)] -= 1
-        _df[(_df.label == 1)] *= -1
+        _df = _df[[c for c in _df.columns if (c.endswith("(x/now)") or c.endswith("label"))]]
+        cols = [c for c in _df.columns if c.endswith("(x/now)")]
+        _df.loc[_df.label == 1, cols] -= 1
+        _df.loc[_df.label == 1, cols] *= -1
         _df = _df.drop(["label"], axis=1)
 
-        for index in range(self.len_symptoms):
-            self.p_noW_X_P[index] = _df.iloc[index:index+1, 2:].prod()
+        self.p_noW_X_P = _df.prod(axis=1).values.tolist()
+        # for index in range(self.len_symptoms):
+        #     self.p_noW_X_P[index] = _df.iloc[index:index+1, 2:].prod()
 
     def all_no_answers_probability_true(self):
         _df = deepcopy(self.df)
         _df = _df.drop(["profession", "Pa"], axis=1)
-        _df = _df[[c for c in _df.columns if c.endswith("(x/w)")]]
-        _df[(_df.label == 1)] -= 1
-        _df[(_df.label == 1)] *= -1
+        _df = _df[[c for c in _df.columns if (c.endswith("(x/w)") or c.endswith("label"))]]
+        cols = [c for c in _df.columns if c.endswith("(x/w)")]
+        _df.loc[_df.label == 1, cols] -= 1
+        _df.loc[_df.label == 1, cols] *= -1
         _df = _df.drop(["label"], axis=1)
-        _df[:, :] -= 1
-        _df[:, :] *= 1
+        _df[:][:] -= 1
+        _df[:][:] *= -1
 
-
-        for index in range(self.len_symptoms):
-            self.p_noW_X_P[index] = _df.iloc[index, 2:].prod()
+        self.p_noW_X_P = _df.prod(axis=1).values.tolist()
+        # for index in range(self.len_symptoms):
+        #     self.p_noW_X_P[index] = _df.iloc[index, 2:].prod()
 
     def all_no_answers_probability_false(self):
         _df = deepcopy(self.df)
         _df = _df.drop(["profession", "Pa"], axis=1)
-        _df = _df[[c for c in _df.columns if c.endswith("(x/now)")]]
-        _df[(_df.label == 1)] -= 1
-        _df[(_df.label == 1)] *= -1
+        _df = _df[[c for c in _df.columns if (c.endswith("(x/now)") or c.endswith("label"))]]
+        cols = [c for c in _df.columns if c.endswith("(x/now)")]
+        _df.loc[_df.label == 1, cols] -= 1
+        _df.loc[_df.label == 1, cols] *= -1
         _df = _df.drop(["label"], axis=1)
-        _df[:, :] -= 1
-        _df[:, :] *= 1
-        for index in range(self.len_symptoms):
-            self.p_noW_X_P[index] = _df.iloc[index, 2:].prod()
+        _df[:][:] -= 1
+        _df[:][:] *= -1
+
+        self.p_noW_X_P = _df.prod(axis=1).values.tolist()
+        # for index in range(self.len_symptoms):
+        #     self.p_noW_X_P[index] = _df.iloc[index, 2:].prod()
 
     def max_theor_prob(self):
-        for index in range(self.len_symptoms):
+        for index in range(len(self.df)):
             pW = self.pW[index]
             pW_X_P = self.pW_X_P[index]
             p_noW_noX_P = self.p_noW_noX_P[index]
@@ -267,9 +282,12 @@ class Interface(Ui_MainWindow):
             self.p_max_W[index] = pW*pW_X_P / (pW*pW_X_P + (1-pW)*p_noW_noX_P)
 
     def min_theor_prob(self):
-        for index in range(self.len_symptoms):
+        for index in range(len(self.df)):
             pW = self.pW[index]
             pW_noX_P = self.pW_noX_P[index]
             p_noW_noX_P = self.p_noW_noX_P[index]
 
-            self.p_min_W[index] = pW * pW_noX_P / (pW*pW_noX_P + (1-pW)*p_noW_noX_P)
+            try:
+                self.p_min_W[index] = pW * pW_noX_P / (pW*pW_noX_P + (1-pW)*p_noW_noX_P)
+            except ZeroDivisionError:
+                self.p_min_W[index] = pd.NA
