@@ -1,14 +1,12 @@
-import numpy as np
 import pandas as pd
 from pandas import DataFrame
 
 
-# yes, it's not true DB...
+# yes, it's not true DB... but it’s more convenient to work with rows and columns in pandas
 
 def create_and_insert():
     df = pd.read_csv('./DB/insert_value_to_table.csv', sep=";", encoding_errors='ignore')
-    #df.columns = df.columns.str.strip()
-    df = df.drop([10])
+    df = df.drop([10])  # drop empty row from dataframe
 
     return df
 
