@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Экспертная система</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QLabel" name="questionTextLabel">
@@ -32,7 +32,7 @@
      <rect>
       <x>250</x>
       <y>640</y>
-      <width>111</width>
+      <width>391</width>
       <height>20</height>
      </rect>
     </property>
@@ -50,7 +50,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Yes</string>
+     <string>Да</string>
     </property>
    </widget>
    <widget class="QPushButton" name="noPushButton">
@@ -63,7 +63,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>No</string>
+     <string>Нет</string>
     </property>
    </widget>
    <widget class="QLabel" name="label">
@@ -249,7 +249,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Start</string>
+     <string>Начать</string>
     </property>
    </widget>
    <widget class="QLabel" name="countAllQuestionLabel">
@@ -270,7 +270,7 @@
      <string/>
     </property>
    </widget>
-   <widget class="QTableWidget" name="leftDiagnosisTableWidget">
+   <widget class="QTableWidget" name="allDiagnosisTableWidget">
     <property name="geometry">
      <rect>
       <x>10</x>

@@ -99,6 +99,14 @@ class Interface(Ui_MainWindow):
             self.len_symptoms -= 1
             self.questions_done += 1
 
+            # exclude diagnosis with probability < epselone
+            for i in range(len(self.pW)):
+                try:
+                    if self.pW[i] < self.e_0:
+                        self.exclude_diagnosis(i)
+                except:
+                    break
+
             # calculate theoretical max and min probabilities
             self.conditional_probabilities()
 
@@ -159,7 +167,7 @@ class Interface(Ui_MainWindow):
 
     def exclude_diagnosis(self, index):
         """Exlude all information of diagnosis"""
-        diagnosis_name = self.df.iloc[index:index+1, 0:1][0][0]
+        diagnosis_name = self.df.iloc[index:index+1, 0:1].values[0][0]
         self.df = self.df.drop([index])
         self.pW.pop(index)
         self.pW_X_P.pop(index)
@@ -180,11 +188,11 @@ class Interface(Ui_MainWindow):
         """all activities associated on completion of work"""
         # set alltableWidgets
         for i in range(len(self.pW)):
-            self.allDiagnosisTableWidget.setItem(i, 0, QTableWidgetItem(self.df.iloc[i:i+1, 0:1][0][0]))
+            self.allDiagnosisTableWidget.setItem(i, 0, QTableWidgetItem(self.df.iloc[i:i+1, 0:1].values[0][0]))
             self.allDiagnosisTableWidget.setItem(i, 1, QTableWidgetItem(str(self.pW[i])))
 
         # set answer name
-        self.answerText.setText(self.df.iloc[answer_index:answer_index+1, 0:1][0][0])
+        self.answerText.setText(self.df.iloc[answer_index:answer_index+1, 0:1].values[0][0])
 
     # ---------------- formulas
     def bayes_yes(self, index):
@@ -197,8 +205,8 @@ class Interface(Ui_MainWindow):
             pW = self.pW[ind]
             if pX_W is not None and pX_noW is not None:
                 self.pW[ind] = pW * pX_W / (pW*pX_W + (1-pW)*pX_noW)
-                if self.pW[ind] < self.e_0:
-                    self.exclude_diagnosis(ind)
+                # if self.pW[ind] < self.e_0:
+                #     self.exclude_diagnosis(ind)
 
     def bayes_no(self, index):
         """Return pW_X on no answer, Bayes formula"""
@@ -210,8 +218,8 @@ class Interface(Ui_MainWindow):
             pW = self.pW[ind]
             if pX_W is not None and pX_noW is not None:
                 self.pW[ind] = pW * (1 - pX_W) / (pW * (1 - pX_W) + (1 - pW) * (1 - pX_noW))
-                if self.pW[ind] < self.e_0:
-                    self.exclude_diagnosis(ind)
+                # if self.pW[ind] < self.e_0:
+                #     self.exclude_diagnosis(ind)
 
     def all_yes_answers_probability_true(self):
         _df = deepcopy(self.df)
